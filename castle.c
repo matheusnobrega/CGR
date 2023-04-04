@@ -1,0 +1,314 @@
+// gcc castle.c -lglut -lGL -lGLU -lm -o castle && ./castle
+
+#include <GL/glut.h>
+#include <math.h>
+
+// Rotation
+static GLfloat yRot = 0.0f;
+static GLfloat xRot = 0.0f;
+
+void torres(GLUquadric *);
+void muros(GLUquadric *);
+void base(GLUquadric *);
+void barrinhasLaterais();
+void barrinhasFrontais();
+void porta(GLUquadric *);
+void arvore(GLUquadric *, float, float, float);
+
+// Change viewing volume and viewport.  Called when window is resized
+void ChangeSize(int w, int h)
+    {
+    GLfloat fAspect;
+
+    // Prevent a divide by zero
+    if(h == 0)
+        h = 1;
+
+    // Set Viewport to window dimensions
+    glViewport(0, 0, w, h);
+
+    fAspect = (GLfloat)w/(GLfloat)h;
+
+    // Reset coordinate system
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+
+    // Produce the perspective projection
+    gluPerspective(90.0f, fAspect, 1.0, 40.0);
+
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    }
+
+
+// This function does any needed initialization on the rendering context.  Here it sets up and initializes the lighting for the scene.
+void SetupRC(){
+
+    // Light values and coordinates
+    GLfloat  whiteLight[] = { 0.05f, 0.05f, 0.05f, 1.0f };
+    GLfloat  sourceLight[] = { 0.25f, 0.25f, 0.25f, 1.0f };
+    GLfloat  lightPos[] = { -20.f, 5.0f, 5.0f, 1.0f };
+
+    glEnable(GL_DEPTH_TEST);    // Hidden surface removal
+    glFrontFace(GL_CCW);        // Counter clock-wise polygons face out
+    glEnable(GL_CULL_FACE);     // Do not calculate inside
+
+    // Enable lighting
+    glEnable(GL_LIGHTING);
+
+    // Setup and enable light 0
+    glLightModelfv(GL_LIGHT_MODEL_AMBIENT,whiteLight);
+    glLightfv(GL_LIGHT0,GL_AMBIENT,sourceLight);
+    glLightfv(GL_LIGHT0,GL_DIFFUSE,sourceLight);
+    glLightfv(GL_LIGHT0,GL_POSITION,lightPos);
+    glEnable(GL_LIGHT0);
+
+    // Enable color tracking
+    glEnable(GL_COLOR_MATERIAL);
+
+    // Set Material properties to follow glColor values
+    glColorMaterial(GL_FRONT, GL_AMBIENT_AND_DIFFUSE);
+
+    // Black blue background
+    glClearColor(0.25f, 0.25f, 0.50f, 1.0f);
+
+}
+
+// Respond to arrow keys (rotate snowman)
+void SpecialKeys(int key, int x, int y){
+
+    if(key == GLUT_KEY_LEFT)
+        yRot -= 5.0f;
+
+    if(key == GLUT_KEY_RIGHT)
+        yRot += 5.0f;
+
+    if(key == GLUT_KEY_UP)
+        xRot -= 5.0f;
+
+    if(key == GLUT_KEY_DOWN)
+        xRot += 5.0f;
+
+    yRot = (GLfloat)((const int)yRot % 360);
+    xRot = (GLfloat)((const int)xRot % 360);
+
+    // Refresh the Window
+    glutPostRedisplay();
+}
+
+
+
+
+// Called to draw scene
+void RenderScene(void){
+
+    GLUquadricObj *pObj;    // Quadric Object
+
+    // Clear the window with current clearing color
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    // Save the matrix state and do the rotations
+    glPushMatrix();
+
+    // Move object back and do in place rotation
+    glTranslatef(0.0f, -1.0f, -5.0f);
+    glRotatef(yRot, 0.0f, 1.0f, 0.0f);
+    glRotatef(xRot, 1.0f, 0.0f, 0.0f);
+
+    glTranslatef(0.0f, 0.5f, 0.0f);
+
+    // Draw something
+    pObj = gluNewQuadric();
+    gluQuadricNormals(pObj, GLU_SMOOTH);
+
+    // white
+    glColor3f(1.0f, 1.0f, 1.0f);
+
+
+    torres(pObj);
+    muros(pObj);
+    base(pObj);
+    porta(pObj);
+    arvore(pObj, 1.0f, -0.8f, 2.6f);
+    arvore(pObj, 1.7f, -0.8f, 2.8f);
+    
+
+
+    // Restore the matrix state
+    glPopMatrix();
+
+    // Buffer swap
+    glutSwapBuffers();
+
+}
+
+int main(int argc, char *argv[]){
+
+    glutInit(&argc, argv);
+    glutInitDisplayMode(GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH);
+    glutInitWindowSize(800, 600);
+    glutCreateWindow("Modeling with Quadrics");
+    glutReshapeFunc(ChangeSize);
+    glutSpecialFunc(SpecialKeys);
+    glutDisplayFunc(RenderScene);
+    SetupRC();
+    glutMainLoop();
+
+    return 0;
+}
+
+
+void torres(GLUquadric *pObj) {
+    float posX = 2.0f;
+    float posY = 0.5f;
+    float posZ = 2.0f;
+    float raio = 0.5f;
+    float altura = 1.5f;
+    float raioCone = 0.6f;
+    float vermMuro = 0.6f;
+    float verdMuro = 0.6f;
+    float azulMuro = 0.6f;
+    float vermTopo = 0.3f;
+    float verdTopo = 0.3f;
+    float azulTopo = 0.3f;
+
+    glColor3f(vermMuro, verdMuro, azulMuro);
+    glPushMatrix();
+        glTranslatef(-posX, posY, -posZ);
+        glRotatef(90, 1, 0, 0);
+        gluCylinder(pObj, raio, raio, altura, 26, 13);
+        glRotatef(180, 1, 0, 0);
+        glColor3f(vermTopo, verdTopo, azulTopo);
+        glutSolidCone(raioCone, 1.0f, 26, 13);
+    glPopMatrix();
+
+    glColor3f(vermMuro, verdMuro, azulMuro);
+    glPushMatrix();
+        glTranslatef(posX, posY, -posZ);
+        glRotatef(90, 1, 0, 0);
+        gluCylinder(pObj, raio, raio, altura, 26, 13);
+        glRotatef(180, 1, 0, 0);
+        glColor3f(vermTopo, verdTopo, azulTopo);
+        glutSolidCone(raioCone, 1.0f, 26, 13);
+    glPopMatrix();
+
+    glColor3f(vermMuro, verdMuro, azulMuro);
+    glPushMatrix();
+        glTranslatef(posX, posY, posZ);
+        glRotatef(90, 1, 0, 0);
+        gluCylinder(pObj, raio, raio, altura, 26, 13);
+        glRotatef(180, 1, 0, 0);
+        glColor3f(vermTopo, verdTopo, azulTopo);
+        glutSolidCone(raioCone, 1.0f, 26, 13);
+    glPopMatrix();
+
+    glColor3f(vermMuro, verdMuro, azulMuro);
+    glPushMatrix();
+        glTranslatef(-posX, posY, posZ);
+        glRotatef(90, 1, 0, 0);
+        gluCylinder(pObj, raio, raio, altura, 26, 13);
+        glRotatef(180, 1, 0, 0);
+        glColor3f(vermTopo, verdTopo, azulTopo);
+        glutSolidCone(raioCone, 1.0f, 26, 13);
+    glPopMatrix();
+}
+
+void muros(GLUquadric *pObj) {
+    float vermMuro = 0.6f;
+    float verdMuro = 0.6f;
+    float azulMuro = 0.6f;
+
+    glPushMatrix();
+        glColor3f(vermMuro, verdMuro, azulMuro);
+        glTranslatef(2.0f, -0.5f, 0.0f);
+        glScalef(0.3f, 1.0f, 3.0f);
+        glutSolidCube(1.0f);
+
+        barrinhasFrontais();
+    glPopMatrix();
+
+    glPushMatrix();
+        glColor3f(vermMuro, verdMuro, azulMuro);
+        glTranslatef(-2.0f, -0.5f, 0.0f);
+        glScalef(0.3f, 1.0f, 3.0f);
+        glutSolidCube(1.0f);
+
+        barrinhasFrontais();
+    glPopMatrix();
+
+    glPushMatrix();
+        glColor3f(vermMuro, verdMuro, azulMuro);
+        glTranslatef(0.0f, -0.5f, 2.0f);
+        glScalef(3.0f, 1.0f, 0.3f);
+        glutSolidCube(1.0f);
+
+        barrinhasLaterais();
+    glPopMatrix();
+
+    glPushMatrix();
+        glColor3f(vermMuro, verdMuro, azulMuro);
+        glTranslatef(0.0f, -0.5f, -2.0f);
+        glScalef(3.0f, 1.0f, 0.3f);
+        glutSolidCube(1.0f);
+        barrinhasLaterais();
+
+    glPopMatrix();
+} 
+
+void base(GLUquadric *pObj) {
+    glPushMatrix();
+        glColor3f(0.0f, 0.6f, 0.0f);
+        glTranslatef(0.0f, -1.5f, 0.0f);
+        glScalef(6.0f, 1.0f, 6.0f);
+        glutSolidCube(1.0f);
+    glPopMatrix();
+
+}
+
+void barrinhasLaterais() {
+    glTranslatef(-0.4f, 0.6f, 0.0f);
+    glScalef(0.1f, 0.2f, 0.3f);
+    glutSolidCube(1.0f);
+
+    int i = 0;
+    for (i=0; i <= 4; i++) {
+        glTranslatef(2.0f, 0.0f, 0.0f);
+        glutSolidCube(1.0f);
+    }
+}
+
+void barrinhasFrontais() {
+    glTranslatef(0.0f, 0.6f, -0.4f);
+    glScalef(0.3f, 0.2f, 0.1f);
+    glutSolidCube(1.0f);
+
+    int i = 0;
+    for (i=0; i <= 4; i++) {
+        glTranslatef(0.0f, 0.0f, 2.0f);
+        glutSolidCube(1.0f);
+    }
+}
+
+void porta(GLUquadric *pObj) {
+    glPushMatrix();
+        glColor3f(0.627, 0.322, 0.176);
+        glTranslatef(0.0f, -0.8f, 2.05f);
+        glScalef(0.3f, 0.5f, 0.3f);
+        glutSolidCube(1.0f);
+        glTranslatef(-0.2f, 0.2f, 0.4f);
+        glColor3f(0.3, 0.3, 0.3);
+        gluSphere(pObj, 0.12f, 26, 13);
+    glPopMatrix();
+}
+
+void arvore(GLUquadric *pObj, float posX, float posY, float posZ) {
+    glPushMatrix();
+        glColor3f(0.627, 0.322, 0.176);
+        glTranslatef(posX, posY, posZ);
+        glRotatef(90, 1, 0, 0);
+        gluCylinder(pObj, 0.1, 0.1, 0.5, 26, 13);
+        glColor3f(0.0, 0.4, 0.0);
+        glRotatef(180, 1, 0, 0);
+        glutSolidCone(0.3, 1.0f, 26, 13);
+    glPopMatrix();
+}
